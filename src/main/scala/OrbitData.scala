@@ -1,3 +1,4 @@
+import scala.annotation.tailrec
 import scala.io.{Codec, Source}
 import scalax.collection.Graph
 import scalax.collection.edge.Implicits._
@@ -31,16 +32,25 @@ case class OrbitData(seed: String, route: Route, satellites: List[Satellite]) {
     val start = route.startPoint
     val end = route.endPoint
 
-    satellites.foldLeft(Graph[GeoPoint, WLUnDiEdge]())((graph, satellite) => {
-      var g = graph
-      if (start.inSight(satellite)) {
-        g = g + edge(start, satellite)
+    @tailrec
+    def loop(satellites: List[Satellite], graph: Graph[GeoPoint, WLUnDiEdge]): Graph[GeoPoint, WLUnDiEdge] = {
+      satellites.headOption match {
+        case None => graph
+
+        case Some(satellite) =>
+          var g = graph
+          if (start.inSight(satellite)) {
+            g = g + edge(start, satellite)
+          }
+          if (end.inSight(satellite)) {
+            g = g + edge(satellite, end)
+          }
+          g = g ++ satellites.tail.filter(_.inSight(satellite)).map(s => edge(satellite, s))
+          loop(satellites.tail, g)
       }
-      if (end.inSight(satellite)) {
-        g = g + edge(satellite, end)
-      }
-      g ++ satellites.filter(_.inSight(satellite)).map(s => edge(satellite, s))
-    })
+    }
+
+    loop(satellites, Graph[GeoPoint, WLUnDiEdge]())
   }
 
   def path(): Option[List[GeoPoint]] = {
