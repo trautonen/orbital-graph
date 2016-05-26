@@ -11,11 +11,10 @@ object OrbitalGraph {
     println(s"Finding signal path for seed ${data.seed}")
 
     val t3 = System.currentTimeMillis()
-    data.path() match {
-      case Some(nodes) => println(nodes.map(_.id).mkString(", "))
-      case None => println("no path found")
-    }
+    val path = data.path()
     val t4 = System.currentTimeMillis()
+
+    println(path.map(nodes => nodes.map(_.id).mkString(", ")).getOrElse("no path found"))
 
     println()
     println(s": Loaded data in ${t2 - t1}ms")
